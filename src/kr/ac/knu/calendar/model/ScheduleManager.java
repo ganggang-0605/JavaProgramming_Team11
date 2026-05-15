@@ -42,9 +42,7 @@ public class ScheduleManager {
 
             boolean dateMatch = true;
             if (targetDate != null) {
-                String targetStr = targetDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd"));
-                String shortTargetStr = targetDate.format(java.time.format.DateTimeFormatter.ofPattern("MM.dd"));
-                dateMatch = s.getDate().contains(targetStr) || s.getDate().contains(shortTargetStr);
+                dateMatch = s.isOccurringOn(targetDate);
             }
 
             if (typeMatch && dateMatch) {

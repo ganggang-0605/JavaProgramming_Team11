@@ -79,6 +79,14 @@ public class CalendarApp extends JFrame {
         });
     }
 
+    private boolean isHoliday(String content) {
+        String[] holidays = {"부처님", "어린이날", "추석", "설날", "현충일", "광복절", "개천절", "한글날", "삼일절", "공휴일", "대체공휴", "기념일"};
+        for (String h : holidays) {
+            if (content.contains(h)) return true;
+        }
+        return false;
+    }
+
     private void updateCalendar() {
         calendarPanel.removeAll();
         monthLabel.setText(currentMonth.getYear() + "년 " + currentMonth.getMonthValue() + "월");
@@ -133,8 +141,19 @@ public class CalendarApp extends JFrame {
                 StringBuilder info = new StringBuilder("<html><div style='text-align:left; padding-left:5px;'>");
                 for (int j = 0; j < Math.min(daySchedules.length, 3); j++) {
                     Schedule s = daySchedules[j];
-                    String color = (s instanceof AcademicSchedule) ? "blue" : "red";
                     String text = s.getContent();
+
+                    // ⭐ 색상 판별 로직 적용
+                    String color = "black"; // 기본 학사일정: 검은색
+
+                    if (s instanceof AcademicSchedule) {
+                        if (isHoliday(text)) {
+                            color = "red"; // 공휴일 키워드가 포함되어 있으면 빨간색
+                        }
+                    } else if (s instanceof PersonalSchedule) {
+                        color = "blue"; // 개인일정은 파란색
+                    }
+
                     if (text.length() > 6) text = text.substring(0, 6) + "..";
                     info.append("<font color='").append(color).append("'>- ").append(text).append("</font><br>");
                 }
