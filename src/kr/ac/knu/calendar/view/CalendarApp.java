@@ -117,6 +117,9 @@ public class CalendarApp extends JFrame {
 
             JButton dayBtn = new JButton();
             dayBtn.setLayout(new BorderLayout());
+            // macOS 환경에서 setBackground가 정상적으로 동작하지 않는 버그 해결
+            // Reference: https://stackoverflow.com/a/9852024
+            dayBtn.setOpaque(true);
 
             if (currentDate.equals(today)) {
                 dayBtn.setBackground(new Color(255, 255, 153));
@@ -132,13 +135,12 @@ public class CalendarApp extends JFrame {
             if (currentDate.getDayOfWeek().getValue() == 6) dayNum.setForeground(Color.BLUE);
 
             if (currentDate.equals(today)) {
-                dayNum.setText("오늘: " + i);
-                dayNum.setFont(new Font("맑은 고딕", Font.BOLD, 12));
+                dayNum.setFont(new Font("맑은 고딕", Font.BOLD, 13));
             }
             dayBtn.add(dayNum, BorderLayout.NORTH);
 
             if (daySchedules.length > 0) {
-                StringBuilder info = new StringBuilder("<html><div style='text-align:left; padding-left:5px;'>");
+                StringBuilder info = new StringBuilder("<html><div style='text-align:left; padding-left:5px; padding-right:5px;'>");
                 for (int j = 0; j < Math.min(daySchedules.length, 3); j++) {
                     Schedule s = daySchedules[j];
                     String text = s.getContent();
@@ -149,12 +151,12 @@ public class CalendarApp extends JFrame {
                     if (s instanceof AcademicSchedule) {
                         if (isHoliday(text)) {
                             color = "red"; // 공휴일 키워드가 포함되어 있으면 빨간색
+                            dayNum.setForeground(Color.RED); // 날짜 텍스트도 빨간색으로 변경
                         }
                     } else if (s instanceof PersonalSchedule) {
                         color = "blue"; // 개인일정은 파란색
                     }
 
-                    if (text.length() > 6) text = text.substring(0, 6) + "..";
                     info.append("<font color='").append(color).append("'>- ").append(text).append("</font><br>");
                 }
                 if (daySchedules.length > 3) {
@@ -164,6 +166,7 @@ public class CalendarApp extends JFrame {
 
                 JLabel infoLabel = new JLabel(info.toString());
                 infoLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 11));
+                infoLabel.setVerticalAlignment(SwingConstants.TOP);
                 dayBtn.add(infoLabel, BorderLayout.CENTER);
             }
 
@@ -176,12 +179,12 @@ public class CalendarApp extends JFrame {
     }
 
     private void openDayDialog(LocalDate date) {
-        JDialog dialog = new JDialog(this, date.toString() + " 상세 일정", true);
+        JDialog dialog = new JDialog(this, date + " 상세 일정", true);
         dialog.setSize(500, 400);
         dialog.setLayout(new BorderLayout());
 
-        DefaultListModel<Schedule> listModel = new DefaultListModel<>();
-        JList<Schedule> list = new JList<>(listModel);
+        DefaultListModel<Schedule> listModel = new DefaultListModel<Schedule>();
+        JList<Schedule> list = new JList<Schedule>(listModel);
         list.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
         dialog.add(new JScrollPane(list), BorderLayout.CENTER);
 
