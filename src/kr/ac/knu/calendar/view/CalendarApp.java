@@ -7,6 +7,8 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 
 public class CalendarApp extends JFrame {
     private ScheduleManager manager;
@@ -19,7 +21,7 @@ public class CalendarApp extends JFrame {
 
     public CalendarApp() {
         manager = new ScheduleManager();
-        DataLoader.loadKnuSchedules(manager);
+        manager.fetchSchedules(LocalDate.now().getYear());
         currentMonth = YearMonth.now();
 
         setTitle("KNU 달력 시스템");
@@ -38,7 +40,7 @@ public class CalendarApp extends JFrame {
         monthLabel = new JLabel("", SwingConstants.CENTER);
         monthLabel.setFont(new Font("맑은 고딕", Font.BOLD, 20));
 
-        String[] filters = {"전체 보기", "학사 일정", "개인 일정"};
+        String[] filters = {"전체 보기", "학사 일정", "학사 일정 (대학원)", "개인 일정"};
         filterBox = new JComboBox<>(filters);
 
         topPanel.add(prevBtn);
@@ -52,11 +54,11 @@ public class CalendarApp extends JFrame {
         add(calendarPanel, BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new FlowLayout());
-        dateField = new JTextField(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd")), 10);
+        dateField = new JTextField(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")), 10);
         contentField = new JTextField(20);
         JButton addQuickBtn = new JButton("개인일정 등록");
 
-        bottomPanel.add(new JLabel("날짜(yyyy.MM.dd):"));
+        bottomPanel.add(new JLabel("날짜(yyyy-MM-dd):"));
         bottomPanel.add(dateField);
         bottomPanel.add(new JLabel("내용:"));
         bottomPanel.add(contentField);
@@ -68,10 +70,10 @@ public class CalendarApp extends JFrame {
         filterBox.addActionListener(e -> updateCalendar());
 
         addQuickBtn.addActionListener(e -> {
-            String d = dateField.getText();
+            LocalDate date = LocalDate.parse(dateField.getText());
             String c = contentField.getText();
-            if (!d.isEmpty() && !c.isEmpty()) {
-                manager.addSchedule(new PersonalSchedule(d, c, "일반"));
+            if (!c.isEmpty()) {
+                manager.addSchedule(date, new PersonalSchedule(date, c));
                 updateCalendar();
                 contentField.setText("");
                 JOptionPane.showMessageDialog(this, "개인일정이 등록되었습니다.");
@@ -113,7 +115,7 @@ public class CalendarApp extends JFrame {
 
         for (int i = 1; i <= daysInMonth; i++) {
             LocalDate currentDate = currentMonth.atDay(i);
-            Schedule[] daySchedules = manager.getFilteredSchedules(filterType, currentDate);
+            java.util.List<Schedule> daySchedules = manager.getSchedules(currentDate);
 
             JButton dayBtn = new JButton();
             dayBtn.setLayout(new BorderLayout());
@@ -139,13 +141,34 @@ public class CalendarApp extends JFrame {
             }
             dayBtn.add(dayNum, BorderLayout.NORTH);
 
-            if (daySchedules.length > 0) {
+            if (!daySchedules.isEmpty()) {
                 StringBuilder info = new StringBuilder("<html><div style='text-align:left; padding-left:5px; padding-right:5px;'>");
-                for (int j = 0; j < Math.min(daySchedules.length, 3); j++) {
-                    Schedule s = daySchedules[j];
+                int count = 0;
+                for (Schedule s : daySchedules) {
+                    if (count++ > 3) break;
+
+                    if (filterType == 1) {
+                        // 학사 일정
+                        if (s instanceof AcademicSchedule academicSchedule) {
+                            if (academicSchedule.getCategory().equals("대학원"))
+                                continue;
+                        } else if (s instanceof PersonalSchedule) {
+                            continue;
+                        }
+                    } else if (filterType == 2) {
+                        // 학사 일정 (대학원 포함)
+                        if (s instanceof PersonalSchedule) {
+                            continue;
+                        }
+                    } else if (filterType == 3) {
+                        // 개인 일정
+                        if (s instanceof AcademicSchedule) {
+                            continue;
+                        }
+                    }
                     String text = s.getContent();
 
-                    // ⭐ 색상 판별 로직 적용
+                    // 색상 판별 로직 적용
                     String color = "black"; // 기본 학사일정: 검은색
 
                     if (s instanceof AcademicSchedule) {
@@ -159,8 +182,8 @@ public class CalendarApp extends JFrame {
 
                     info.append("<font color='").append(color).append("'>- ").append(text).append("</font><br>");
                 }
-                if (daySchedules.length > 3) {
-                    info.append("<font color='gray'>+").append(daySchedules.length - 3).append(" 더보기</font>");
+                if (daySchedules.size() > 3) {
+                    info.append("<font color='gray'>+").append(daySchedules.size() - 3).append(" 더보기</font>");
                 }
                 info.append("</div></html>");
 
@@ -178,8 +201,19 @@ public class CalendarApp extends JFrame {
         calendarPanel.repaint();
     }
 
+    public String getDDayString(LocalDate date) {
+        long dDay = ChronoUnit.DAYS.between(LocalDate.now(), date);
+        String dDayString = "D-Day";
+        if (dDay > 0) {
+            dDayString = "D-" + dDay;
+        } else if (dDay < 0) {
+            dDayString = "D+" + Math.abs(dDay);
+        }
+        return dDayString;
+    }
+
     private void openDayDialog(LocalDate date) {
-        JDialog dialog = new JDialog(this, date + " 상세 일정", true);
+        JDialog dialog = new JDialog(this, String.format("%s 상세 일정 (%s)", date, getDDayString(date)), true);
         dialog.setSize(500, 400);
         dialog.setLayout(new BorderLayout());
 
@@ -190,8 +224,31 @@ public class CalendarApp extends JFrame {
 
         Runnable refreshList = () -> {
             listModel.clear();
-            Schedule[] s = manager.getFilteredSchedules(filterBox.getSelectedIndex(), date);
-            for (Schedule sch : s) listModel.addElement(sch);
+            java.util.List<Schedule> s = manager.getSchedules(date);
+            for (Schedule sch : s) {
+                int filterType = filterBox.getSelectedIndex();
+                if (filterType == 1) {
+                    // 학사 일정
+                    if (s instanceof AcademicSchedule academicSchedule) {
+                        if (academicSchedule.getCategory().equals("대학원"))
+                            continue;
+                    } else if (s instanceof PersonalSchedule) {
+                        continue;
+                    }
+                } else if (filterType == 2) {
+                    // 학사 일정 (대학원 포함)
+                    if (s instanceof PersonalSchedule) {
+                        continue;
+                    }
+                } else if (filterType == 3) {
+                    // 개인 일정
+                    if (s instanceof AcademicSchedule) {
+                        continue;
+                    }
+                }
+
+                listModel.addElement(sch);
+            }
             updateCalendar();
         };
         refreshList.run();
@@ -204,8 +261,7 @@ public class CalendarApp extends JFrame {
         addPerBtn.addActionListener(e -> {
             String content = JOptionPane.showInputDialog(dialog, "개인일정 내용 입력:");
             if (content != null && !content.trim().isEmpty()) {
-                String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
-                manager.addSchedule(new PersonalSchedule(dateStr, content, "일반"));
+                manager.addSchedule(date, new PersonalSchedule(date, content));
                 refreshList.run();
             }
         });
@@ -224,7 +280,7 @@ public class CalendarApp extends JFrame {
         delBtn.addActionListener(e -> {
             Schedule sel = list.getSelectedValue();
             if (sel != null) {
-                manager.removeSchedule(sel);
+                manager.removeSchedule(date, sel);
                 refreshList.run();
             }
         });
