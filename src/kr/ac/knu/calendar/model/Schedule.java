@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 public abstract class Schedule implements Comparable<Schedule> {
+    private static final String[] HOLIDAYS = {"부처님", "어린이날", "추석", "설날", "현충일", "광복절", "개천절", "한글날", "삼일절", "공휴일", "대체공휴", "기념일"};
     protected LocalDate date;
     protected String content;
 
@@ -18,8 +19,11 @@ public abstract class Schedule implements Comparable<Schedule> {
     public void setContent(String content) { this.content = content; }
     public abstract String getScheduleType();
 
-    public long getDDay() {
-        return ChronoUnit.DAYS.between(LocalDate.now(), this.date);
+    public boolean isHoliday() {
+        for (String holiday : HOLIDAYS) {
+            if (this.content.contains(holiday)) return true;
+        }
+        return false;
     }
 
     @Override

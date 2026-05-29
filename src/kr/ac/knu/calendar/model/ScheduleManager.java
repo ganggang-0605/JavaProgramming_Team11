@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ScheduleManager {
     private static final String KNU_SCHEDULE_URL = "https://knu.ac.kr/wbbs/wbbs/user/yearSchedule/index.action?search_year=%d";
@@ -17,21 +19,43 @@ public class ScheduleManager {
     }
 
     public void addSchedule(LocalDate date, Schedule schedule) {
-        schedules.computeIfAbsent(date, _ -> new ArrayList<>())
+        this.schedules.computeIfAbsent(date, _ -> new ArrayList<>())
                 .add(schedule);
     }
 
     public void removeSchedule(LocalDate date, Schedule schedule) {
-        if (!schedules.containsKey(date)) return;
+        if (!this.schedules.containsKey(date)) return;
 
-        List<Schedule> daySchedules = schedules.get(date);
+        List<Schedule> daySchedules = this.schedules.get(date);
         daySchedules.remove(schedule);
 
-        if (daySchedules.isEmpty()) schedules.remove(date);
+        if (daySchedules.isEmpty()) this.schedules.remove(date);
     }
 
-    public List<Schedule> getSchedules(LocalDate localDate) {
-        return schedules.getOrDefault(localDate, new ArrayList<>());
+    public List<Schedule> getSchedules(LocalDate date) {
+        return this.schedules.getOrDefault(date, new ArrayList<>());
+    }
+
+    public List<Schedule> getFilteredSchedules(LocalDate date, int filterType) {
+        if (!this.schedules.containsKey(date)) return new ArrayList<>();
+
+        Stream<Schedule> stream = this.schedules.get(date).stream().filter(schedule ->
+            switch (filterType) {
+                case 1 -> { // 학사 일정 (대학원 제외)
+                    if (schedule instanceof AcademicSchedule academicSchedule) {
+                        yield !academicSchedule.getCategory().equals("대학원");
+                    }
+                    yield false;
+                }
+                case 2 -> // 학사 일정 (대학원 포함)
+                        schedule instanceof AcademicSchedule;
+                case 3 -> // 개인 일정
+                        schedule instanceof PersonalSchedule;
+                default -> true;
+            }
+        );
+
+        return stream.collect(Collectors.toList());
     }
 
     public void fetchSchedules(int year) {

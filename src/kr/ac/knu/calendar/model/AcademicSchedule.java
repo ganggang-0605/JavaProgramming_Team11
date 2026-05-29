@@ -4,12 +4,11 @@ import java.time.LocalDate;
 
 public class AcademicSchedule extends Schedule {
     private String category;
-    private final String scheduleType;
+    private final String scheduleType = "학사";
 
     public AcademicSchedule(LocalDate date, String content, String category) {
         super(date, content);
         this.category = category;
-        this.scheduleType = "학사";
     }
 
     public String getCategory() { return this.category; }
