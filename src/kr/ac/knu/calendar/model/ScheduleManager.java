@@ -36,26 +36,13 @@ public class ScheduleManager {
         return this.schedules.getOrDefault(date, new ArrayList<>());
     }
 
-    public List<Schedule> getFilteredSchedules(LocalDate date, int filterType) {
+    public List<Schedule> getFilteredSchedules(LocalDate date, ScheduleFilter filter) {
         if (!this.schedules.containsKey(date)) return new ArrayList<>();
 
-        Stream<Schedule> stream = this.schedules.get(date).stream().filter(schedule ->
-            switch (filterType) {
-                case 1 -> { // 학사 일정 (대학원 제외)
-                    if (schedule instanceof AcademicSchedule academicSchedule) {
-                        yield !academicSchedule.getCategory().equals("대학원");
-                    }
-                    yield false;
-                }
-                case 2 -> // 학사 일정 (대학원 포함)
-                        schedule instanceof AcademicSchedule;
-                case 3 -> // 개인 일정
-                        schedule instanceof PersonalSchedule;
-                default -> true;
-            }
-        );
+        List<Schedule> list = new ArrayList<>(this.schedules.get(date));
+        list.removeIf(schedule -> !filter.test(schedule));
 
-        return stream.collect(Collectors.toList());
+        return list;
     }
 
     public void fetchSchedules(int year) {

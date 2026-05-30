@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 public abstract class Schedule implements Comparable<Schedule> {
-    private static final String[] HOLIDAYS = {"부처님", "어린이날", "추석", "설날", "현충일", "광복절", "개천절", "한글날", "삼일절", "공휴일", "대체공휴", "기념일"};
+    private static final String[] HOLIDAYS = {"신정", "설날", "삼일절", "근로자의 날", "어린이날", "석가탄신일", "현충일", "광복절", "추석", "개천절", "한글날", "성탄절", "기념일", "공휴일", "연휴", "선거"};
     protected LocalDate date;
     protected String content;
 

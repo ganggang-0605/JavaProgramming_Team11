@@ -16,8 +16,9 @@ public class ItemList<T> extends JList<T> {
 
     public DefaultListModel<T> getListModel() { return this.listModel; }
 
-    public void addElement(T element) {
+    public T addElement(T element) {
         this.listModel.addElement(element);
+        return element;
     }
 
     public void clear() {
