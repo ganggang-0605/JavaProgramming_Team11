@@ -1,7 +1,7 @@
 package kr.ac.knu.calendar.model;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 public abstract class Schedule implements Comparable<Schedule> {
     private static final String[] HOLIDAYS = {"신정", "설날", "삼일절", "근로자의 날", "어린이날", "석가탄신일", "현충일", "광복절", "추석", "개천절", "한글날", "성탄절", "기념일", "공휴일", "연휴", "선거"};
@@ -37,19 +37,13 @@ public abstract class Schedule implements Comparable<Schedule> {
     }
 
     @Override
-    public int hashCode() {
-        return this.date.hashCode() +
-                this.content.hashCode() +
-                this.getScheduleType().hashCode();
+    public boolean equals(Object o) {
+        if (!(o instanceof Schedule schedule)) return false;
+        return Objects.equals(this.date, schedule.date) && Objects.equals(this.content, schedule.content);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Schedule schedule) {
-            return this.date.equals(schedule.getDate()) &&
-                    this.content.equals(schedule.getContent()) &&
-                    this.getScheduleType().equals(schedule.getScheduleType());
-        }
-        return false;
+    public int hashCode() {
+        return Objects.hash(this.date, this.content);
     }
 }

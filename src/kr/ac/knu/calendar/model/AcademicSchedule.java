@@ -1,6 +1,7 @@
 package kr.ac.knu.calendar.model;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class AcademicSchedule extends Schedule {
     private String category;
@@ -25,20 +26,14 @@ public class AcademicSchedule extends Schedule {
     }
 
     @Override
-    public int hashCode() {
-        return this.date.hashCode() +
-                this.content.hashCode() +
-                this.category.hashCode() +
-                this.scheduleType.hashCode();
+    public boolean equals(Object o) {
+        if (!(o instanceof AcademicSchedule schedule)) return false;
+        if (!super.equals(o)) return false;
+        return Objects.equals(this.category, schedule.category);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof AcademicSchedule schedule) {
-            return this.date.equals(schedule.getDate()) &&
-                    this.content.equals(schedule.getContent()) &&
-                    this.category.equals(schedule.getCategory());
-        }
-        return false;
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.category, this.scheduleType);
     }
 }

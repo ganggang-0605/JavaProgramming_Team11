@@ -18,7 +18,6 @@ public class ScheduleLoaderThread extends Thread {
     private final Consumer<Boolean> callback;
 
     public ScheduleLoaderThread(ScheduleManager manager, Year year, Consumer<Boolean> callback) {
-        super();
         this.manager = manager;
         this.year = year;
         this.callback = callback;
@@ -28,7 +27,7 @@ public class ScheduleLoaderThread extends Thread {
     public void run() {
         try {
             String data = DataLoader.loadData(String.format(KNU_SCHEDULE_URL, this.year.getValue()));
-            List<Schedule> schedules = parse(data, this.year.getValue());
+            List<Schedule> schedules = this.parse(data, this.year.getValue());
 
             for (Schedule schedule : schedules) {
                 this.manager.addSchedule(schedule.getDate(), schedule);
@@ -41,7 +40,7 @@ public class ScheduleLoaderThread extends Thread {
         }
     }
 
-    private static List<Schedule> parse(String data, int year) {
+    private List<Schedule> parse(String data, int year) {
         List<Schedule> schedules = new ArrayList<>();
 
         Pattern p = Pattern.compile("<li><span class=\"day\">(\\d+)\\.(\\d+)\\(.\\)</span>(.+)</li>");
@@ -70,7 +69,7 @@ public class ScheduleLoaderThread extends Thread {
                 schedules.add(schedule);
 
                 // 일정 내용에 날짜가 추가적으로 입력되는 경우
-                Set<LocalDate> dates = parseDateRange(schedule);
+                Set<LocalDate> dates = this.parseDateRange(schedule);
                 for (LocalDate date : dates) {
                     AcademicSchedule extraSchedule = new AcademicSchedule(
                             date,
@@ -87,7 +86,7 @@ public class ScheduleLoaderThread extends Thread {
         return schedules;
     }
 
-    private static Set<LocalDate> parseDateRange(Schedule schedule) {
+    private Set<LocalDate> parseDateRange(Schedule schedule) {
         Set<LocalDate> dates = new HashSet<>();
         String content = schedule.getContent();
 

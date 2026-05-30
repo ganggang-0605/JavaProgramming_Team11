@@ -3,8 +3,6 @@ package kr.ac.knu.calendar.view;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 public class ItemPanel extends JPanel {
     public ItemPanel() {
