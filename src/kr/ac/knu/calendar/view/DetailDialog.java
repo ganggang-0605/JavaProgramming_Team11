@@ -51,7 +51,7 @@ public class DetailDialog extends JDialog {
             this.deleteButton.setEnabled(selected instanceof PersonalSchedule);
         });
 
-        this.updateList();
+        SwingUtilities.invokeLater(this::updateList);
         this.add(new JScrollPane(this.list), BorderLayout.CENTER);
     }
 
@@ -69,7 +69,7 @@ public class DetailDialog extends JDialog {
             if (content != null && !content.trim().isEmpty()) {
                 Schedule schedule = new PersonalSchedule(this.date, content);
                 manager.addSchedule(this.date, schedule);
-                this.updateList();
+                SwingUtilities.invokeLater(this::updateList);
                 this.list.setSelectedValue(schedule, true);
             }
         });
@@ -102,7 +102,7 @@ public class DetailDialog extends JDialog {
             String content = response.toString().trim();
             if (!content.isEmpty()) {
                 schedule.setContent(content);
-                this.updateList();
+                SwingUtilities.invokeLater(this::updateList);
                 this.list.setSelectedValue(schedule, true);
             }
         });
@@ -130,7 +130,7 @@ public class DetailDialog extends JDialog {
             );
             if (response == 0) {
                 manager.removeSchedule(this.date, schedule);
-                this.updateList();
+                SwingUtilities.invokeLater(this::updateList);
             }
         });
         this.deleteButton.setEnabled(false);
@@ -148,7 +148,7 @@ public class DetailDialog extends JDialog {
             this.list.addElement(schedule);
         }
 
-        this.parent.updateCalendar();
+        SwingUtilities.invokeLater(this.parent::updateCalendar);
     }
 
     private String getDDayString() {
