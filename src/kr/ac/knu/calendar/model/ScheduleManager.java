@@ -1,58 +1,39 @@
 package kr.ac.knu.calendar.model;
 
 import java.time.LocalDate;
-import java.util.Arrays;
+import java.util.*;
 
 public class ScheduleManager {
-    private Schedule[] schedules;
-    private int count;
+    private final Map<LocalDate, List<Schedule>> schedules;
 
     public ScheduleManager() {
-        this.schedules = new Schedule[1000];
-        this.count = 0;
+        this.schedules = new HashMap<>();
     }
 
-    public void addSchedule(Schedule s) {
-        if (count < schedules.length) {
-            schedules[count++] = s;
-        }
+    public void addSchedule(LocalDate date, Schedule schedule) {
+        this.schedules.computeIfAbsent(date, _ -> new ArrayList<>())
+                .add(schedule);
     }
 
-    public void removeSchedule(Schedule s) {
-        for (int i = 0; i < count; i++) {
-            if (schedules[i] == s) {
-                for (int j = i; j < count - 1; j++) {
-                    schedules[j] = schedules[j + 1];
-                }
-                schedules[--count] = null;
-                break;
-            }
-        }
+    public void removeSchedule(LocalDate date, Schedule schedule) {
+        if (!this.schedules.containsKey(date)) return;
+
+        List<Schedule> daySchedules = this.schedules.get(date);
+        daySchedules.remove(schedule);
+
+        if (daySchedules.isEmpty()) this.schedules.remove(date);
     }
 
-    public Schedule[] getFilteredSchedules(int filterType, LocalDate targetDate) {
-        Schedule[] temp = new Schedule[count];
-        int mCount = 0;
+    public List<Schedule> getSchedules(LocalDate date) {
+        return this.schedules.getOrDefault(date, new ArrayList<>());
+    }
 
-        for (int i = 0; i < count; i++) {
-            Schedule s = schedules[i];
-            boolean typeMatch = (filterType == 0) ||
-                    (filterType == 1 && s instanceof AcademicSchedule) ||
-                    (filterType == 2 && s instanceof PersonalSchedule);
+    public List<Schedule> getFilteredSchedules(LocalDate date, ScheduleFilter filter) {
+        if (!this.schedules.containsKey(date)) return new ArrayList<>();
 
-            boolean dateMatch = true;
-            if (targetDate != null) {
-                dateMatch = s.isOccurringOn(targetDate);
-            }
+        List<Schedule> list = new ArrayList<>(this.schedules.get(date));
+        list.removeIf(schedule -> !filter.test(schedule));
 
-            if (typeMatch && dateMatch) {
-                temp[mCount++] = s;
-            }
-        }
-
-        Schedule[] result = new Schedule[mCount];
-        System.arraycopy(temp, 0, result, 0, mCount);
-        Arrays.sort(result);
-        return result;
+        return list;
     }
 }

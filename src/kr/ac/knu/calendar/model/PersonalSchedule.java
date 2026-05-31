@@ -1,15 +1,17 @@
 package kr.ac.knu.calendar.model;
 
-public class PersonalSchedule extends Schedule {
-    private String priority;
+import java.time.LocalDate;
 
-    public PersonalSchedule(String date, String content, String priority) {
+public class PersonalSchedule extends Schedule {
+    private final String scheduleType;
+
+    public PersonalSchedule(LocalDate date, String content) {
         super(date, content);
-        this.priority = priority;
+        this.scheduleType = "개인";
     }
 
     @Override
     public String getScheduleType() {
-        return "개인";
+        return this.scheduleType;
     }
 }
