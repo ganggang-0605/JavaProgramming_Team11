@@ -7,10 +7,9 @@ public class ItemList<T> extends JList<T> {
     private final DefaultListModel<T> listModel;
 
     public ItemList() {
-        DefaultListModel<T> listModel = new DefaultListModel<>();
-        super(listModel);
+        super(new DefaultListModel<>());
 
-        this.listModel = listModel;
+        this.listModel = (DefaultListModel<T>) super.getModel();
         this.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
     }
 

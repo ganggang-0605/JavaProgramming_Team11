@@ -68,7 +68,7 @@ public class DetailDialog extends JDialog {
             );
             if (content != null && !content.trim().isEmpty()) {
                 Schedule schedule = new PersonalSchedule(this.date, content);
-                manager.addSchedule(this.date, schedule);
+                manager.addSchedule(schedule);
                 SwingUtilities.invokeLater(this::updateList);
                 this.list.setSelectedValue(schedule, true);
             }
@@ -129,7 +129,7 @@ public class DetailDialog extends JDialog {
                     JOptionPane.OK_CANCEL_OPTION
             );
             if (response == 0) {
-                manager.removeSchedule(this.date, schedule);
+                manager.removeSchedule(schedule);
                 SwingUtilities.invokeLater(this::updateList);
             }
         });
@@ -138,6 +138,10 @@ public class DetailDialog extends JDialog {
         this.add(this.buttonPanel, BorderLayout.SOUTH);
     }
 
+    /**
+     * 일정 목록을 다시 렌더링합니다.
+     * 일정 목록의 요소가 업데이트될 때마다 호출하여야 합니다.
+     */
     private void updateList() {
         this.list.clear();
 
@@ -151,6 +155,10 @@ public class DetailDialog extends JDialog {
         SwingUtilities.invokeLater(this.parent::updateCalendar);
     }
 
+    /**
+     * 오늘까지 남은/지난 시간을 나타냅니다.
+     * @return "D-Day" | "D-{dDay}" | "D+{dDay}"
+     */
     private String getDDayString() {
         long dDay = ChronoUnit.DAYS.between(LocalDate.now(), this.date);
         String dDayString = "D-Day";

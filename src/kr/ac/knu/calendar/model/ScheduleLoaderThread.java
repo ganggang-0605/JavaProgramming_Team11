@@ -5,44 +5,46 @@ import kr.ac.knu.calendar.util.DataLoader;
 import javax.swing.*;
 import java.time.DateTimeException;
 import java.time.LocalDate;
-import java.time.Year;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ScheduleLoaderThread extends Thread {
     private static final String KNU_SCHEDULE_URL = "https://knu.ac.kr/wbbs/wbbs/user/yearSchedule/index.action?search_year=%d";
-    private final ScheduleManager manager;
-    private final Year year;
-    private final Consumer<Boolean> callback;
+    private final int year;
+    private ScheduleLoaderCallbackInterface callback;
 
-    public ScheduleLoaderThread(ScheduleManager manager, Year year, Consumer<Boolean> callback) {
-        this.manager = manager;
+    public ScheduleLoaderThread(int year) {
         this.year = year;
-        this.callback = callback;
     }
+
+    public int getYear() { return this.year; }
+    public ScheduleLoaderCallbackInterface getCallback() { return this.callback; }
+    public void setCallback(ScheduleLoaderCallbackInterface callback) { this.callback = callback; }
 
     @Override
     public void run() {
         try {
-            String data = DataLoader.loadData(String.format(KNU_SCHEDULE_URL, this.year.getValue()));
-            List<Schedule> schedules = this.parse(data, this.year.getValue());
+            String data = DataLoader.loadData(String.format(KNU_SCHEDULE_URL, this.year));
+            List<Schedule> schedules = this.parse(data);
 
-            for (Schedule schedule : schedules) {
-                this.manager.addSchedule(schedule.getDate(), schedule);
-            }
-            if (this.callback != null) this.callback.accept(true);
+            // 불러온 학사일정 목록을 callback으로 전달
+            if (this.callback != null) this.callback.updateSchedules(schedules);
         } catch (Exception e) {
-            e.printStackTrace();
-            if (this.callback != null) this.callback.accept(false);
+            if (this.callback != null) this.callback.onError(e);
             this.interrupt();
         }
     }
 
-    private List<Schedule> parse(String data, int year) {
+    /**
+     * 학사일정 페이지의 HTML 응답에서 학사일정을 파싱합니다.
+     * @param data HTML 응답
+     * @return 학사일정 목록이 담긴 배열
+     */
+    private List<Schedule> parse(String data) {
         List<Schedule> schedules = new ArrayList<>();
 
+        // Regex를 이용해 학사일정 페이지의 HTML에서 일정 목록을 가져옴
         Pattern p = Pattern.compile("<li><span class=\"day\">(\\d+)\\.(\\d+)\\(.\\)</span>(.+)</li>");
         Matcher m = p.matcher(data);
         while (m.find()) {
@@ -55,13 +57,13 @@ public class ScheduleLoaderThread extends Thread {
                 AcademicSchedule schedule;
                 if (content.startsWith("[대학원]")) {
                     schedule = new AcademicSchedule(
-                            LocalDate.of(year, month, day),
+                            LocalDate.of(this.year, month, day),
                             content.replace("[대학원]", "").trim(),
                             "대학원"
                     );
                 } else {
                     schedule = new AcademicSchedule(
-                            LocalDate.of(year, month, day),
+                            LocalDate.of(this.year, month, day),
                             content,
                             "학사"
                     );
@@ -86,10 +88,18 @@ public class ScheduleLoaderThread extends Thread {
         return schedules;
     }
 
+    /**
+     * 일정의 내용에서 일정 범위를 파싱하고, 범위를 일정 내용에서 삭제합니다.<br/>
+     * Ex: 1학기 수강꾸러미 신청(1.20.~1.22.) -><br/>
+     * [YYYY-01-20, YYYY-01-21, YYYY-01-22]
+     * @param schedule 일정
+     * @return 일정 범위
+     */
     private Set<LocalDate> parseDateRange(Schedule schedule) {
         Set<LocalDate> dates = new HashSet<>();
         String content = schedule.getContent();
 
+        // 일정 내용에서 Regex로 날짜 범위가 추가적으로 주어진 경우 처리 (ex: 1학기 수강꾸러미 신청(1.20.~1.22.))
         Pattern p = Pattern.compile(":?\\s?\\(?(\\d+\\.\\d+\\.?\\s?~?){1,2}/?\\)?");
         Matcher m = p.matcher(schedule.getContent());
         while (m.find()) {
