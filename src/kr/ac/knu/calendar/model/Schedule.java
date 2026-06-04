@@ -19,6 +19,10 @@ public abstract class Schedule implements Comparable<Schedule> {
     public void setContent(String content) { this.content = content; }
     public abstract String getScheduleType();
 
+    /**
+     * 일정 날짜의 공휴일 여부를 반환합니다.
+     * @return 공휴일 여부
+     */
     public boolean isHoliday() {
         for (String holiday : HOLIDAYS) {
             if (this.content.contains(holiday)) return true;

@@ -5,11 +5,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.time.LocalDate;
-import java.time.Year;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class CalendarApp extends JFrame {
@@ -19,20 +17,13 @@ public class CalendarApp extends JFrame {
     private static final String[] DAYS = {"일", "월", "화", "수", "목", "금", "토"};
     private final ScheduleManager manager;
     private final ScheduleFilter filter;
-    private final List<Year> loadedYears;
-    private ScheduleLoaderThread scheduleLoader;
     private YearMonth currentMonth;
     private JPanel calendarPanel;
     private JLabel monthLabel;
 
     public CalendarApp() {
-        this.manager = new ScheduleManager();
+        this.manager = new ScheduleManager(this);
         this.filter = new ScheduleFilter(0);
-        this.loadedYears = new ArrayList<>();
-
-        this.scheduleLoader = new ScheduleLoaderThread(this.manager, Year.now(), null);
-        this.scheduleLoader.start();
-
         this.currentMonth = YearMonth.now();
     }
 
@@ -57,21 +48,14 @@ public class CalendarApp extends JFrame {
 
         this.setVisible(true);
 
-        try {
-            this.scheduleLoader.join();
-            this.loadedYears.add(Year.now());
-        } catch (InterruptedException e) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "일정을 불러오는 도중 오류가 발생하였습니다.",
-                    TITLE,
-                    JOptionPane.ERROR_MESSAGE
-            );
-        } finally {
-            SwingUtilities.invokeLater(this::updateCalendar);
-        }
+        // 현재연도 학사일정 로딩
+        this.manager.fetchSchedules(this.currentMonth.getYear());
     }
 
+    /**
+     * 캘린더 패널(달력)을 다시 렌더링합니다.
+     * 달력의 요소가 업데이트될 때마다 호출하여야 합니다.
+     */
     public void updateCalendar() {
         this.calendarPanel.removeAll();
         this.monthLabel.setText(String.format(
@@ -106,16 +90,22 @@ public class CalendarApp extends JFrame {
         ItemPanel topPanel = new ItemPanel();
 
         topPanel.addButton("<", _ -> {
+            this.currentMonth = this.currentMonth.minusMonths(1);
+            SwingUtilities.invokeLater(this::updateCalendar);
+
             // 이전연도 학사일정 로딩
-            fetchSchedules(this.currentMonth.minusMonths(1));
+            this.manager.fetchSchedules(this.currentMonth.getYear());
         });
 
         this.monthLabel = topPanel.addLabel("", SwingConstants.CENTER);
         this.monthLabel.setFont(new Font("맑은 고딕", Font.BOLD, 20));
 
         topPanel.addButton(">", _ -> {
+            this.currentMonth = this.currentMonth.plusMonths(1);
+            SwingUtilities.invokeLater(this::updateCalendar);
+
             // 다음연도 학사일정 로딩
-            fetchSchedules(this.currentMonth.plusMonths(1));
+            this.manager.fetchSchedules(this.currentMonth.getYear());
         });
 
         topPanel.addLabel("  필터: ");
@@ -128,34 +118,6 @@ public class CalendarApp extends JFrame {
         });
 
         this.add(topPanel, BorderLayout.NORTH);
-    }
-
-    private void fetchSchedules(YearMonth newMonth) {
-        Year newYear = Year.of(newMonth.getYear());
-        if (this.currentMonth.getYear() != newYear.getValue() && !this.loadedYears.contains(newYear)) {
-            ScheduleLoaderThread scheduleLoader = new ScheduleLoaderThread(
-                    this.manager,
-                    Year.of(newMonth.getYear()),
-                    success -> {
-                        if (success) {
-                            this.loadedYears.add(newYear);
-                            SwingUtilities.invokeLater(this::updateCalendar);
-                        }
-                        else {
-                            JOptionPane.showMessageDialog(
-                                    this,
-                                    "일정을 불러오는 도중 오류가 발생하였습니다.",
-                                    TITLE,
-                                    JOptionPane.ERROR_MESSAGE
-                            );
-                        }
-                    }
-            );
-            scheduleLoader.start();
-        }
-
-        this.currentMonth = newMonth;
-        SwingUtilities.invokeLater(this::updateCalendar);
     }
 
     private void addCalendarPanel() {
@@ -182,7 +144,7 @@ public class CalendarApp extends JFrame {
                 String c = contentField.getText().trim();
                 if (!c.isEmpty()) {
                     contentField.setText("");
-                    this.manager.addSchedule(date, new PersonalSchedule(date, c));
+                    this.manager.addSchedule(new PersonalSchedule(date, c));
                     SwingUtilities.invokeLater(this::updateCalendar);
                     JOptionPane.showMessageDialog(
                             this,
@@ -212,6 +174,10 @@ public class CalendarApp extends JFrame {
         this.add(bottomPanel, BorderLayout.SOUTH);
     }
 
+    /**
+     * 캘린더 패널(달력)에 날짜를 추가합니다.
+     * @param date 날짜
+     */
     private void addDayButton(LocalDate date) {
         JButton dayButton = new JButton();
         dayButton.setLayout(new BorderLayout());
