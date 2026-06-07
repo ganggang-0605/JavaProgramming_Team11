@@ -100,7 +100,7 @@ public class ScheduleLoaderThread extends Thread {
         String content = schedule.getContent();
 
         // 일정 내용에서 Regex로 날짜 범위가 추가적으로 주어진 경우 처리 (ex: 1학기 수강꾸러미 신청(1.20.~1.22.))
-        Pattern p = Pattern.compile(":?\\s?\\(?(\\d+\\.\\d+\\.?\\s?~?){1,2}/?\\)?");
+        Pattern p = Pattern.compile(":?\\s?\\(?(\\d+\\.\\s?\\d+\\.?\\s?~?){1,2}/?\\)?");
         Matcher m = p.matcher(schedule.getContent());
         while (m.find()) {
             String extras = m.group();
@@ -112,8 +112,8 @@ public class ScheduleLoaderThread extends Thread {
             for (String extraDate : extraDates) {
                 // 12.23. -> month: 12, day: 23
                 StringTokenizer st = new StringTokenizer(extraDate, ".");
-                int month = Integer.parseInt(st.nextToken());
-                int day = Integer.parseInt(st.nextToken());
+                int month = Integer.parseInt(st.nextToken().trim());
+                int day = Integer.parseInt(st.nextToken().trim());
 
                 LocalDate localDate = LocalDate.of(schedule.getDate().getYear(), month, day);
                 if (start == null) start = localDate;
