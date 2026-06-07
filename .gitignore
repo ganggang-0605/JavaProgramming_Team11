@@ -37,3 +37,6 @@ bin/
 
 # macOS
 .DS_Store
+
+# Local data files
+schedules.txt

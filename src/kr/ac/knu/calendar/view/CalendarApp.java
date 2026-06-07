@@ -244,6 +244,7 @@ public class CalendarApp extends JFrame {
     }
 
     public static void main(String[] args) {
+
         CalendarApp app = new CalendarApp();
         app.init();
     }
