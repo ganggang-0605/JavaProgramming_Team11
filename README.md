@@ -1,4 +1,4 @@
-# 🗓️ 경북대 통합 일정 관리 시스템
+# 경북대 통합 일정 관리 시스템
 
 경북대학교 학사일정 실시간 스크래핑 연동 및 개인 일정 관리가 가능한 순수 Java 기반 데스크톱 캘린더 애플리케이션
 
@@ -25,7 +25,7 @@
 5. **무중단 로컬 데이터 영속성 (File I/O 자동 저장)**
     * 사용자가 별도로 '저장' 버튼을 누르지 않아도, 프로그램을 종료하는 시점에 사용자가 등록한 개인 일정이 로컬 텍스트 파일(`schedules.txt`)에 자동 저장되고 다음 실행 시 완벽하게 복원됨.
 
-## 📂 패키지 구조 (MVC 패턴)
+## 패키지 구조 (MVC 패턴)
 ```text
 src/kr/ac/knu/calendar/
  ├── model/                  # 데이터 구조 및 비즈니스 로직
@@ -46,7 +46,7 @@ src/kr/ac/knu/calendar/
      └── ItemPanel.java        (코드 재사용성을 고려한 커스텀 UI 패널)
 ```
 
-## ⚙실행 방법
+## 실행 방법
 1. 본 레포지토리를 Clone 합니다.
 
 2. IntelliJ IDEA 또는 Eclipse에서 프로젝트를 오픈합니다. (Java 22+ 환경 세팅 필요)
@@ -56,10 +56,10 @@ src/kr/ac/knu/calendar/
 - Note: 프로그램을 실행하고 개인 일정을 추가한 뒤 종료하면, 프로젝트 루트 디렉토리에 개인 일정 데이터가 담긴 schedules.txt 파일이 자동 생성됩니다.
 
 ## 개발 포인트
-1. **다형성 활용:** ScheduleManager는 AcademicSchedule과 PersonalSchedule을 추상 부모 타입인 Schedule 하나로 묶어(List<Schedule>) 유연하게 관리합니다.
+1. **다형성 활용:** ScheduleManager는 AcademicSchedule과 PersonalSchedule을 추상 부모 타입인 Schedule 하나로 묶어(List<Schedule>) 유연하게 관리
 
-2. **커스텀 정규식 파싱:** 무거운 DOM 파서 대신 정규 표현식(Pattern, Matcher)을 직접 작성하여 웹페이지 구조를 분석하고 연속된 날짜(12.25.~1.1.)를 개별 LocalDate로 변환하는 알고리즘을 적용했습니다.
+2. **커스텀 정규식 파싱:** 무거운 DOM 파서 대신 정규 표현식(Pattern, Matcher)을 직접 작성하여 웹페이지 구조를 분석하고 연속된 날짜(12.25.~1.1.)를 개별 LocalDate로 변환하는 알고리즘을 적용
 
-3. **비동기 멀티스레딩:** 네트워크 딜레이로 인한 메인 스레드(EDT) 병목을 막기 위해 작업 스레드를 분리하였고, 완료 시 Callback을 통해 안전하게 화면을 갱신합니다.
+3. **비동기 멀티스레딩:** 네트워크 딜레이로 인한 메인 스레드(EDT) 병목을 막기 위해 작업 스레드를 분리하였고, 완료 시 Callback을 통해 안전하게 화면을 갱신
 
-4. **Shutdown Hook 기반 파일 입출력:** java.io 패키지의 BufferedReader/Writer를 활용하였으며, Runtime.getRuntime().addShutdownHook()을 적용해 프로그램 정상 종료 이벤트를 감지하여 데이터를 안전하게 직렬화(Auto-Save)하도록 설계했습니다. (메모리 낭비를 막기 위해 학교 서버에서 다시 불러올 수 있는 학사일정은 제외하고, '개인 일정'만 선택적으로 저장합니다.)
+4. **Shutdown Hook 기반 파일 입출력:** java.io 패키지의 BufferedReader/Writer를 활용하였으며, Runtime.getRuntime().addShutdownHook()을 적용해 프로그램 정상 종료 이벤트를 감지하여 데이터를 안전하게 직렬화하도록 설계 (메모리 낭비를 막기 위해 학교 서버에서 다시 불러올 수 있는 학사일정은 제외하고, 개인 일정만 선택적으로 저장)
