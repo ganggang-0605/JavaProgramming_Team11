@@ -146,7 +146,7 @@ public class ScheduleManager {
             }
         }
     }
-
+//불러오기 기능
     public void loadSchedulesFromFile() {
         String filePath = "schedules.txt";
         java.io.File file = new java.io.File(filePath);
